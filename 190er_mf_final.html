@@ -24,9 +24,11 @@
   // Seite sofort ausblenden bis Auth geprüft
   document.documentElement.style.visibility = "hidden";
 
-  
+  let loggingOut = false;
+
   // Logout
   document.getElementById("logoutBtn").addEventListener("click", async () => {
+    loggingOut = true;
     await signOut(auth);
     window.location.replace("index.html");
   });
@@ -34,7 +36,7 @@
   onAuthStateChanged(auth, user => {
     if (user) {
       document.documentElement.style.visibility = "visible";
-    } else {
+    } else if (!loggingOut) {
       window.location.replace("index.html");
     }
   });
@@ -603,7 +605,7 @@ document.querySelectorAll(".btn-primary,.btn-secondary,.connect-card").forEach(e
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getDatabase, ref, onValue, query, orderByChild, limitToLast }
+  import { getDatabase, ref, onValue }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
   const firebaseConfig = {
@@ -633,25 +635,19 @@ document.querySelectorAll(".btn-primary,.btn-secondary,.connect-card").forEach(e
     el.innerHTML = rows.map((r, i) => `
       <div class="hs-row ${i === 0 ? 'top1' : ''} ${r.uid === currentUid ? 'me' : ''}">
         <div class="hs-rank ${rankClass[i] || ''}">${i + 1}</div>
-        <div class="hs-name ${r.uid === currentUid ? 'me' : ''}">${r.username || "Unbekannt"}</div>
-        <div class="hs-score">${(r.score || 0).toLocaleString()}</div>
+        <div class="hs-name ${r.uid === currentUid ? 'me' : ''}">${r.username}</div>
+        <div class="hs-score">${r.score.toLocaleString()}</div>
       </div>`).join('');
   }
 
   // Live listener — updates automatically when scores change
-  const hsQuery = query(ref(db, "highscores"), orderByChild("score"), limitToLast(10));
-  onValue(hsQuery, snap => {
+  onValue(ref(db, "highscores"), snap => {
     const rows = [];
     if (snap.exists()) {
-      snap.forEach(child => {
-        const val = child.val();
-        if (val && typeof val.score === "number") {
-          rows.push({ uid: child.key, ...val });
-        }
-      });
+      snap.forEach(child => rows.push({ uid: child.key, ...child.val() }));
       rows.sort((a, b) => b.score - a.score);
     }
-    renderHighscores(rows);
+    renderHighscores(rows.slice(0, 10));
   }, () => {
     document.getElementById("mainHsList").innerHTML =
       '<div class="hs-empty">Scores konnten nicht geladen werden.</div>';
