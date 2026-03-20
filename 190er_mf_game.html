@@ -171,14 +171,31 @@ canvas#gameCanvas{display:block;position:absolute;top:0;left:0;width:100%;height
   });
 
   // ── HIGHSCORES — live listener ──
+  let _hsUnsubscribe = null;
+
   function setupHighscoreLive() {
-    onValue(ref(db, "highscores"), snap => {
+    // Vorherigen Listener entfernen, falls vorhanden
+    if (_hsUnsubscribe) { _hsUnsubscribe(); _hsUnsubscribe = null; }
+
+    const hsQuery = query(
+      ref(db, "highscores"),
+      orderByChild("score"),
+      limitToLast(10)
+    );
+
+    _hsUnsubscribe = onValue(hsQuery, snap => {
       const rows = [];
       if (snap.exists()) {
-        snap.forEach(child => rows.push({ uid: child.key, ...child.val() }));
+        snap.forEach(child => {
+          const val = child.val();
+          if (val && typeof val.score === "number") {
+            rows.push({ uid: child.key, ...val });
+          }
+        });
+        // orderByChild sortiert aufsteigend → umkehren für Platz 1 oben
         rows.sort((a, b) => b.score - a.score);
       }
-      renderHighscores(rows.slice(0, 10));
+      renderHighscores(rows);
       window._highscoreRows = rows;
     }, e => console.error("Highscore-Fehler:", e));
   }
@@ -194,8 +211,8 @@ canvas#gameCanvas{display:block;position:absolute;top:0;left:0;width:100%;height
     el.innerHTML = rows.map((r,i) => `
       <div class="hs-row${r.uid===currentUser?.uid?' me':''}">
         <div class="hs-rank ${rankClass[i]||''}">${i+1}</div>
-        <div class="hs-name ${r.uid===currentUser?.uid?'me':''}">${r.username}</div>
-        <div class="hs-score">${r.score.toLocaleString()}</div>
+        <div class="hs-name ${r.uid===currentUser?.uid?'me':''}">${r.username || "Unbekannt"}</div>
+        <div class="hs-score">${(r.score||0).toLocaleString()}</div>
       </div>`).join('');
   }
 
