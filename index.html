@@ -241,11 +241,11 @@ body{background:var(--black);color:var(--text);font-family:Rajdhani,sans-serif;o
 
   // Wenn bereits eingeloggt → direkt weiterleiten
   // ABER nicht wenn wir gerade von einem Logout kommen
-  const fromLogout = sessionStorage.getItem("logout") === "1";
-  if (fromLogout) sessionStorage.removeItem("logout");
+  let blockRedirect = sessionStorage.getItem("logout") === "1";
+  if (blockRedirect) sessionStorage.removeItem("logout");
 
   onAuthStateChanged(auth, user => {
-    if (user && !fromLogout) window.location.href = "190er_mf_final.html";
+    if (user && !blockRedirect) window.location.href = "190er_mf_final.html";
   });
 
   // ── Helpers ──
@@ -292,6 +292,7 @@ body{background:var(--black);color:var(--text);font-family:Rajdhani,sans-serif;o
     if (!email || !pass) { showMsg("Bitte E-Mail und Passwort eingeben.", "error"); return; }
     const btn = document.getElementById("loginBtn");
     setLoading(btn, true); clearMsg();
+    blockRedirect = false;
     try {
       await signInWithEmailAndPassword(auth, email, pass);
       // onAuthStateChanged übernimmt die Weiterleitung
