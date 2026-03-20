@@ -621,7 +621,7 @@ document.querySelectorAll(".btn-primary,.btn-secondary,.connect-card").forEach(e
     el.innerHTML = rows.map((r, i) => `
       <div class="hs-row ${i === 0 ? 'top1' : ''} ${r.uid === currentUid ? 'me' : ''}">
         <div class="hs-rank ${rankClass[i] || ''}">${i + 1}</div>
-        <div class="hs-name ${r.uid === currentUid ? 'me' : ''}">${r.username}</div>
+        <div class="hs-name ${r.uid === currentUid ? 'me' : ''}">${r.username || 'Unbekannt'}</div>
         <div class="hs-score">${r.score.toLocaleString()}</div>
       </div>`).join('');
   }
@@ -630,7 +630,12 @@ document.querySelectorAll(".btn-primary,.btn-secondary,.connect-card").forEach(e
   onValue(ref(db, "highscores"), snap => {
     const rows = [];
     if (snap.exists()) {
-      snap.forEach(child => rows.push({ uid: child.key, ...child.val() }));
+      snap.forEach(child => {
+        const val = child.val();
+        if (val && typeof val.score === "number") {
+          rows.push({ uid: child.key, ...val });
+        }
+      });
       rows.sort((a, b) => b.score - a.score);
     }
     renderHighscores(rows.slice(0, 10));
