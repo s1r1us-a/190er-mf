@@ -588,11 +588,13 @@ document.querySelectorAll(".btn-primary,.btn-secondary,.connect-card").forEach(e
   const auth = getAuth(app);
   const db   = getDatabase(app);
 
-  // ─── AUTH GUARD ───
+  // ─── AUTH GUARD + UID ───
   let loggingOut = false;
+  let currentUid = null;
 
   onAuthStateChanged(auth, user => {
     if (user) {
+      currentUid = user.uid;
       document.documentElement.style.visibility = "visible";
     } else if (!loggingOut) {
       window.location.replace("index.html");
@@ -607,8 +609,6 @@ document.querySelectorAll(".btn-primary,.btn-secondary,.connect-card").forEach(e
   });
 
   // ─── HIGHSCORES ───
-  let currentUid = null;
-  onAuthStateChanged(auth, user => { currentUid = user ? user.uid : null; });
 
   function renderHighscores(rows) {
     const el = document.getElementById("mainHsList");
