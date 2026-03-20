@@ -604,6 +604,7 @@ document.querySelectorAll(".btn-primary,.btn-secondary,.connect-card").forEach(e
   // ─── LOGOUT ───
   document.getElementById("logoutBtn").addEventListener("click", async () => {
     loggingOut = true;
+    sessionStorage.setItem("logout", "1");
     await signOut(auth);
     window.location.replace("index.html");
   });
